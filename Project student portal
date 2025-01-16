@@ -1,135 +1,270 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <limits>
 using namespace std;
 
-const int MAX_STUDENTS = 100;
-
-struct Student {
+class Student {
+private:
     string name;
     int rollNo;
     int age;
     string department;
+    int marks[5];
+
+public:
+    
+    Student(string name = "", int rollNo = 0, int age = 0, string department = "") {
+        this->name = name;
+        this->rollNo = rollNo;
+        this->age = age;
+        this->department = department;
+        for (int i = 0; i < 5; i++) {
+            marks[i] = 0;
+        }
+    }
+
+    void inputDetails() {
+        cout << "Enter student name: ";
+        getline(cin, name);
+        
+        cout << "Enter roll number: ";
+        cin >> rollNo;
+
+        while (rollNo <= 0) {
+            cout << "Invalid roll number! Enter again: ";
+            cin >> rollNo;
+        }
+
+        cout << "Enter age: ";
+        cin >> age;
+        
+        while (age <= 0 || age > 100) {
+            cout << "Invalid age! Enter again: ";
+            cin >> age;
+        }
+
+        cin.ignore();
+        cout << "Enter department: ";
+        getline(cin, department);
+
+        
+        for (int i = 0; i < 5; i++) {
+            cout << "Enter marks for subject " << i + 1 << ": ";
+            cin >> marks[i];
+            while (marks[i] < 0 || marks[i] > 100) {
+                cout << "Invalid marks! Enter again (0 to 100): ";
+                cin >> marks[i];
+            }
+        }
+    }
+
+    void displayDetails() const {
+        cout << name << "\t" << rollNo << "\t" << age << "\t" << department << "\t";
+        for (int i = 0; i < 5; i++) {
+            cout << marks[i] << " ";
+        }
+        cout << endl;
+    }
+
+    int getRollNo() const {
+        return rollNo;
+    }
+
+    // Save to file format: name, rollNo, age, department, marks
+    void saveToFile(ofstream &outFile) const {
+        outFile << name << "\n" << rollNo << "\n" << age << "\n" << department << "\n";
+        for (int i = 0; i < 5; i++) {
+            outFile << marks[i] << " ";
+        }
+        outFile << "\n";
+    }
+
+    // Load data from file format: name, rollNo, age, department, marks
+    void loadFromFile(ifstream &inFile) {
+        getline(inFile, name);
+        inFile >> rollNo >> age;
+        inFile.ignore();
+        getline(inFile, department);
+        for (int i = 0; i < 5; i++) {
+            inFile >> marks[i];
+        }
+        inFile.ignore();
+    }
+
+    // Update student details
+    void updateDetails() {
+        inputDetails();
+    }
+
+    void deleteStudent() {
+        name = "";
+        rollNo = 0;
+        age = 0;
+        department = "";
+        for (int i = 0; i < 5; i++) {
+            marks[i] = 0;
+        }
+    }
 };
 
-void addStudent(Student students[], int &count) {
-    if (count >= MAX_STUDENTS) {
-        cout << "Maximum number of students reached!" << endl;
-        return;
+class StudentPortal {
+private:
+    Student students[100];
+    int studentCount;
+
+public:
+    StudentPortal() {
+        studentCount = 0;
     }
 
-    Student newStudent;
-    cout << "Enter student name: ";
-    cin.ignore();
-    getline(cin, newStudent.name);
-    cout << "Enter roll number: ";
-    cin >> newStudent.rollNo;
-    cout << "Enter age: ";
-    cin >> newStudent.age;
-    cout << "Enter department: ";
-    cin.ignore();
-    getline(cin, newStudent.department);
-
-    students[count] = newStudent;
-    count++;
-    cout << "Student added successfully!" << endl;
-}
-
-void displayStudents(const Student students[], int count) {
-    if (count == 0) {
-        cout << "No students available." << endl;
-        return;
+    void addStudent() {
+        if (studentCount < 100) {
+            students[studentCount].inputDetails();
+            studentCount++;
+            cout << "Student added successfully!" << endl;
+        } else {
+            cout << "Maximum student limit reached!" << endl;
+        }
     }
 
-    cout << "\nStudent List:\n";
-    cout << "Name\tRoll No\tAge\tDepartment\n";
-    for (int i = 0; i < count; i++) {
-        cout << students[i].name << "\t" << students[i].rollNo << "\t" << students[i].age << "\t" << students[i].department << endl;
-    }
-}
+    void displayAllStudents() const {
+        if (studentCount == 0) {
+            cout << "No students to display!" << endl;
+            return;
+        }
 
-void saveToFile(const Student students[], int count) {
-    ofstream file("students.txt");
-
-    if (!file) {
-        cout << "Error opening file!" << endl;
-        return;
+        cout << "\nStudent List:\n";
+        cout << "Name\tRoll No\tAge\tDepartment\tMarks\n";
+        for (int i = 0; i < studentCount; i++) {
+            students[i].displayDetails();
+        }
     }
 
-    for (int i = 0; i < count; i++) {
-        file << students[i].name << "\n";
-        file << students[i].rollNo << "\n";
-        file << students[i].age << "\n";
-        file << students[i].department << "\n";
+    void searchStudent(int rollNo) const {
+        bool found = false;
+        for (int i = 0; i < studentCount; i++) {
+            if (students[i].getRollNo() == rollNo) {
+                cout << "Student found: " << endl;
+                students[i].displayDetails();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            cout << "No student found with roll number " << rollNo << endl;
+        }
     }
 
-    file.close();
-    cout << "Data saved to file successfully!" << endl;
-}
-
-void loadFromFile(Student students[], int &count) {
-    ifstream file("students.txt");
-
-    if (!file) {
-        cout << "No data file found!" << endl;
-        return;
+    void updateStudent(int rollNo) {
+        for (int i = 0; i < studentCount; i++) {
+            if (students[i].getRollNo() == rollNo) {
+                cout << "Updating student details:" << endl;
+                students[i].updateDetails();
+                cout << "Student details updated!" << endl;
+                return;
+            }
+        }
+        cout << "Student with roll number " << rollNo << " not found!" << endl;
     }
 
-    while (file && count < MAX_STUDENTS) {
-        Student student;
-        getline(file, student.name);
-        if (student.name.empty()) break; // Exit if end of file
-        file >> student.rollNo;
-        file >> student.age;
-        file.ignore();
-        getline(file, student.department);
-        students[count] = student;
-        count++;
-        file.ignore();
+    void deleteStudent(int rollNo) {
+        for (int i = 0; i < studentCount; i++) {
+            if (students[i].getRollNo() == rollNo) {
+                for (int j = i; j < studentCount - 1; j++) {
+                    students[j] = students[j + 1];
+                }
+                students[studentCount - 1].deleteStudent();
+                studentCount--;
+                cout << "Student deleted successfully!" << endl;
+                return;
+            }
+        }
+        cout << "Student with roll number " << rollNo << " not found!" << endl;
     }
 
-    file.close();
-    cout << "Data loaded from file successfully!" << endl;
-}
+    void saveToFile() const {
+        ofstream outFile("students.txt");
+        if (!outFile) {
+            cout << "Error opening file!" << endl;
+            return;
+        }
+        for (int i = 0; i < studentCount; i++) {
+            students[i].saveToFile(outFile);
+        }
+        cout << "Data saved to file!" << endl;
+    }
+
+    void loadFromFile() {
+        ifstream inFile("students.txt");
+        if (!inFile) {
+            cout << "No data file found!" << endl;
+            return;
+        }
+        studentCount = 0;
+        while (!inFile.eof()) {
+            students[studentCount].loadFromFile(inFile);
+            studentCount++;
+        }
+        cout << "Data loaded from file!" << endl;
+    }
+};
 
 int main() {
-    Student students[MAX_STUDENTS];
-    int studentCount = 0;
+    StudentPortal portal;
+    int choice, rollNo;
 
-    // Load data from file at the beginning
-    loadFromFile(students, studentCount);
+    portal.loadFromFile();  // Load data from file at the start
 
-    int choice;
     do {
         cout << "\nStudent Portal Menu\n";
         cout << "1. Add Student\n";
-        cout << "2. Display Students\n";
-        cout << "3. Save Students to File\n";
-        cout << "4. Load Students from File\n";
-        cout << "5. Exit\n";
+        cout << "2. Display All Students\n";
+        cout << "3. Search Student\n";
+        cout << "4. Update Student\n";
+        cout << "5. Delete Student\n";
+        cout << "6. Save Data to File\n";
+        cout << "7. Load Data from File\n";
+        cout << "8. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
+        cin.ignore();
 
         switch (choice) {
             case 1:
-                addStudent(students, studentCount);
+                portal.addStudent();
                 break;
             case 2:
-                displayStudents(students, studentCount);
+                portal.displayAllStudents();
                 break;
             case 3:
-                saveToFile(students, studentCount);
+                cout << "Enter roll number to search: ";
+                cin >> rollNo;
+                portal.searchStudent(rollNo);
                 break;
             case 4:
-                loadFromFile(students, studentCount);
+                cout << "Enter roll number to update: ";
+                cin >> rollNo;
+                portal.updateStudent(rollNo);
                 break;
             case 5:
+                cout << "Enter roll number to delete: ";
+                cin >> rollNo;
+                portal.deleteStudent(rollNo);
+                break;
+            case 6:
+                portal.saveToFile();
+                break;
+            case 7:
+                portal.loadFromFile();
+                break;
+            case 8:
                 cout << "Exiting program..." << endl;
                 break;
             default:
                 cout << "Invalid choice! Please try again." << endl;
         }
-    } while (choice != 5);
+    } while (choice != 8);
 
     return 0;
 }
